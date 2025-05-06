@@ -8,17 +8,16 @@ import lombok.Data;
 @Data
 public class User {
     @Id
-    @Column (name = "user_id")
     @GeneratedValue (strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    @Column (name = "user_name", nullable = false)
+    @Column (nullable = false)
     private String name;
 
-    @Column (name = "user_lastName", nullable = false)
+    @Column (nullable = false)
     private String lastName;
 
-    @Column (name = "user_email", nullable = false, unique = true)
+    @Column (nullable = false, unique = true)
     private String email;
 
     @Column (nullable = false, unique = true)
