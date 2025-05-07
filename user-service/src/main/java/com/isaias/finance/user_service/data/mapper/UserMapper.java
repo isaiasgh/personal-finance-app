@@ -1,7 +1,8 @@
 package com.isaias.finance.user_service.data.mapper;
 
+import com.isaias.finance.user_service.data.dto.UserBasicDTO;
+import com.isaias.finance.user_service.data.dto.UserPublicDTO;
 import com.isaias.finance.user_service.data.dto.UserRegistrationRequestDTO;
-import com.isaias.finance.user_service.data.dto.UserRegistrationResponseDTO;
 import com.isaias.finance.user_service.data.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.factory.Mappers;
@@ -12,5 +13,7 @@ public interface UserMapper {
 
     User userRegistrationRequestDTOToUser (UserRegistrationRequestDTO userRegistrationRequestDTO);
 
-    UserRegistrationResponseDTO userToUserRegistrationResponseDTO (User user);
+    UserBasicDTO userToUserBasicDTO (User user);
+
+    UserPublicDTO userToUserPublicDTO (User user);
 }
