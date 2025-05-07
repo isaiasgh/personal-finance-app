@@ -1,0 +1,87 @@
+package com.isaias.finance.user_service.domain.service;
+
+import com.isaias.finance.user_service.config.security.JwtProvider;
+import com.isaias.finance.user_service.data.dto.UserBasicDTO;
+import com.isaias.finance.user_service.data.dto.UserLoginRequestDTO;
+import com.isaias.finance.user_service.data.dto.UserLoginResponseDTO;
+import com.isaias.finance.user_service.data.dto.UserRegistrationRequestDTO;
+import com.isaias.finance.user_service.data.entity.User;
+import com.isaias.finance.user_service.data.mapper.UserMapper;
+import com.isaias.finance.user_service.data.repository.UserRepository;
+import com.isaias.finance.user_service.domain.exception.UserAlreadyExistsException;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+
+@Service
+@RequiredArgsConstructor
+public class UserServiceImpl implements UserService {
+    private final AuthenticationManager authenticationManager;
+    private final UserRepository userRepository;
+    private final JwtProvider jwtProvider;
+    private final UserMapper userMapper;
+    private final PasswordLogService passwordLogService;
+
+    @Override
+    public UserBasicDTO registerNewUser(UserRegistrationRequestDTO userRequest) {
+        boolean credentialsAreAvailable = areUserCredentialsAvailable (userRequest);
+
+        if (!credentialsAreAvailable) {
+            throw new UserAlreadyExistsException("User credentials are already in use");
+        }
+
+        LocalDateTime creationTime = LocalDateTime.now();
+
+        User user = userMapper.userRegistrationRequestDTOToUser(userRequest);
+        user.setCreatedAt(creationTime);
+        userRepository.save(user);
+
+        passwordLogService.logNewUserPassword(user, userRequest.getPassword(), creationTime);
+
+        return userMapper.userToUserBasicDTO(user);
+    }
+
+    @Override
+    public UserLoginResponseDTO loginUser(UserLoginRequestDTO userLoginRequestDTO) {
+        try {
+            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+                    userLoginRequestDTO.getUsername(),
+                    userLoginRequestDTO.getPassword()
+            ));
+
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            String token = jwtProvider.generateToken(authentication);
+
+            User user = userRepository.findByUsername(userLoginRequestDTO.getUsername())
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+
+            UserBasicDTO userBasicDTO = userMapper.userToUserBasicDTO(user);
+
+            UserLoginResponseDTO userLoginResponseDTO = new UserLoginResponseDTO();
+            userLoginResponseDTO.setToken(token);
+            userLoginResponseDTO.setUser(userBasicDTO);
+
+            return userLoginResponseDTO;
+
+        } catch (BadCredentialsException ex) {
+            userRepository.findByUsername(userLoginRequestDTO.getUsername())
+                    .ifPresent(user -> passwordLogService.logLoginError (user, "Incorrect password", LocalDateTime.now()));
+
+            throw ex;
+        }
+    }
+
+    private boolean areUserCredentialsAvailable (UserRegistrationRequestDTO userRequest) {
+        boolean usernameIsAvailable = !userRepository.existsUserByUsername(userRequest.getUsername());
+        boolean emailIsAvailable = !userRepository.existsUserByEmail(userRequest.getEmail());
+
+        return usernameIsAvailable && emailIsAvailable;
+    }
+}
