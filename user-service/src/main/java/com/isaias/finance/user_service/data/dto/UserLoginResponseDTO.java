@@ -5,4 +5,6 @@ import lombok.Data;
 @Data
 public class UserLoginResponseDTO {
     private String token;
+    private String tokenType = "Bearer ";
+    private UserBasicDTO user;
 }
