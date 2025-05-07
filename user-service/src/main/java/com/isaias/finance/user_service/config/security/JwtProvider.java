@@ -15,13 +15,14 @@ import java.util.Date;
 
 @Component
 public class JwtProvider {
-    @Value ("${EXPIRATION_TIME}")
-    private long EXPIRATION_TIME;
+    private final long EXPIRATION_TIME;
 
-    @Value ("${SECURITY_CONSTANT}")
-    private String SECURITY_CONSTANT;
+    private final SecretKey key;
 
-    SecretKey key = Keys.hmacShaKeyFor(SECURITY_CONSTANT.getBytes(StandardCharsets.UTF_8));
+    public JwtProvider(@Value("${SECURITY_CONSTANT}") String securityConstant, @Value("${EXPIRATION_TIME}") Long expirationTime) {
+        this.key = Keys.hmacShaKeyFor(securityConstant.getBytes(StandardCharsets.UTF_8));
+        this.EXPIRATION_TIME = expirationTime;
+    }
 
     public String generateToken (Authentication authentication) {
         String username = authentication.getName();
