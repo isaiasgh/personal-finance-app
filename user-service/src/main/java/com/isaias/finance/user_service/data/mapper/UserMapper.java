@@ -5,12 +5,9 @@ import com.isaias.finance.user_service.data.dto.UserPublicDTO;
 import com.isaias.finance.user_service.data.dto.UserRegistrationRequestDTO;
 import com.isaias.finance.user_service.data.entity.User;
 import org.mapstruct.Mapper;
-import org.mapstruct.factory.Mappers;
 
-@Mapper
+@Mapper (componentModel = "spring")
 public interface UserMapper {
-    UserMapper mapper = Mappers.getMapper(UserMapper.class);
-
     User userRegistrationRequestDTOToUser (UserRegistrationRequestDTO userRegistrationRequestDTO);
 
     UserBasicDTO userToUserBasicDTO (User user);
