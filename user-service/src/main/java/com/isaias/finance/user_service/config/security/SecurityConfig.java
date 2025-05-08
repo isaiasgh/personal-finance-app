@@ -1,5 +1,7 @@
 package com.isaias.finance.user_service.config.security;
 
+import com.isaias.finance.user_service.data.repository.UserRepository;
+import com.isaias.finance.user_service.domain.service.AuthLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,8 +34,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    JwtAuthenticationFilter jwtAuthenticationFilter (CustomUserDetailsService userService, JwtProvider jwtProvider) {
-        return new JwtAuthenticationFilter(userService, jwtProvider);
+    JwtAuthenticationFilter jwtAuthenticationFilter (CustomUserDetailsService userService, JwtProvider jwtProvider, AuthLogService authLogService, UserRepository userRepository) {
+        return new JwtAuthenticationFilter(userService, jwtProvider, authLogService, userRepository);
     }
 
     @Bean

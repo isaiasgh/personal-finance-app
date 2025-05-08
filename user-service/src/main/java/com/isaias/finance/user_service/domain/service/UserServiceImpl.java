@@ -27,7 +27,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final JwtProvider jwtProvider;
     private final UserMapper userMapper;
-    private final PasswordLogService passwordLogService;
+    private final AuthLogService authLogService;
 
     @Override
     public UserBasicDTO registerNewUser(UserRegistrationRequestDTO userRequest) {
@@ -43,7 +43,7 @@ public class UserServiceImpl implements UserService {
         user.setCreatedAt(creationTime);
         userRepository.save(user);
 
-        passwordLogService.logNewUserPassword(user, userRequest.getPassword(), creationTime);
+        authLogService.logNewUserPassword(user, userRequest.getPassword(), creationTime);
 
         return userMapper.userToUserBasicDTO(user);
     }
@@ -72,7 +72,7 @@ public class UserServiceImpl implements UserService {
 
         } catch (BadCredentialsException ex) {
             userRepository.findByUsername(userLoginRequestDTO.getUsername())
-                    .ifPresent(user -> passwordLogService.logLoginError (user, "Incorrect password.", LocalDateTime.now()));
+                    .ifPresent(user -> authLogService.logAuthError(user, "Incorrect password.", LocalDateTime.now()));
 
             throw ex;
         }
@@ -99,7 +99,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found."));
 
-        passwordLogService.updatePassword(dto, user);
+        authLogService.updatePassword(dto, user);
     }
 
     private boolean areUserCredentialsAvailable (UserRegistrationRequestDTO userRequest) {

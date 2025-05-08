@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
-public class PasswordLogServiceImpl implements PasswordLogService {
+public class AuthLogServiceImpl implements AuthLogService {
     private final PasswordLogRepository repository;
     private final PasswordEncoder encoder;
     private final PasswordLogRepository passwordLogRepository;
@@ -29,7 +29,7 @@ public class PasswordLogServiceImpl implements PasswordLogService {
     }
 
     @Override
-    public void logLoginError(User user, String errorDescription, LocalDateTime timestamp) {
+    public void logAuthError(User user, String errorDescription, LocalDateTime timestamp) {
         PasswordLog log = new PasswordLog();
         log.setUser(user);
         log.setHashedPassword("");

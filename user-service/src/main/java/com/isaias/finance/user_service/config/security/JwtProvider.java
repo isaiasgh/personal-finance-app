@@ -1,8 +1,6 @@
 package com.isaias.finance.user_service.config.security;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
@@ -55,8 +53,10 @@ public class JwtProvider {
                     .parseClaimsJws(token);
 
             return true;
-        } catch (Exception ex) {
-            throw new AuthenticationCredentialsNotFoundException (ex.getMessage());
+        } catch (ExpiredJwtException ex) {
+            throw ex;
+        } catch (JwtException ex) {
+            throw new AuthenticationCredentialsNotFoundException("Invalid JWT token: " + ex.getMessage());
         }
     }
 }
