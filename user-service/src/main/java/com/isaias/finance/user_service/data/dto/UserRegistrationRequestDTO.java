@@ -16,6 +16,7 @@ public class UserRegistrationRequestDTO {
     private String username;
 
     @Email
+    @NotBlank
     private String email;
 
     @NotBlank
