@@ -1,14 +1,12 @@
 package com.isaias.finance.user_service.domain.service;
 
 import com.isaias.finance.user_service.config.security.JwtProvider;
-import com.isaias.finance.user_service.data.dto.UserBasicDTO;
-import com.isaias.finance.user_service.data.dto.UserLoginRequestDTO;
-import com.isaias.finance.user_service.data.dto.UserLoginResponseDTO;
-import com.isaias.finance.user_service.data.dto.UserRegistrationRequestDTO;
+import com.isaias.finance.user_service.data.dto.*;
 import com.isaias.finance.user_service.data.entity.User;
 import com.isaias.finance.user_service.data.mapper.UserMapper;
 import com.isaias.finance.user_service.data.repository.UserRepository;
 import com.isaias.finance.user_service.domain.exception.UserAlreadyExistsException;
+import com.isaias.finance.user_service.domain.exception.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -19,6 +17,8 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -60,7 +60,7 @@ public class UserServiceImpl implements UserService {
             String token = jwtProvider.generateToken(authentication);
 
             User user = userRepository.findByUsername(userLoginRequestDTO.getUsername())
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found."));
 
             UserBasicDTO userBasicDTO = userMapper.userToUserBasicDTO(user);
 
@@ -72,10 +72,34 @@ public class UserServiceImpl implements UserService {
 
         } catch (BadCredentialsException ex) {
             userRepository.findByUsername(userLoginRequestDTO.getUsername())
-                    .ifPresent(user -> passwordLogService.logLoginError (user, "Incorrect password", LocalDateTime.now()));
+                    .ifPresent(user -> passwordLogService.logLoginError (user, "Incorrect password.", LocalDateTime.now()));
 
             throw ex;
         }
+    }
+
+    @Override
+    public List<UserPublicDTO> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(userMapper::userToUserPublicDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public UserPublicDTO getUserById (Integer id) {
+        return userMapper.userToUserPublicDTO(
+                userRepository.findById(id)
+                .orElseThrow(() -> new UserNotFoundException("User with id " + id + " does not exist."))
+        );
+    }
+
+    @Override
+    public void updatePassword (PasswordUpdateDTO dto) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found."));
+
+        passwordLogService.updatePassword(dto, user);
     }
 
     private boolean areUserCredentialsAvailable (UserRegistrationRequestDTO userRequest) {
