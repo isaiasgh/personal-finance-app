@@ -1,16 +1,14 @@
 package com.isaias.finance.user_service.controller;
 
-import com.isaias.finance.user_service.data.dto.UserBasicDTO;
-import com.isaias.finance.user_service.data.dto.UserLoginRequestDTO;
-import com.isaias.finance.user_service.data.dto.UserLoginResponseDTO;
-import com.isaias.finance.user_service.data.dto.UserRegistrationRequestDTO;
+import com.isaias.finance.user_service.data.dto.*;
 import com.isaias.finance.user_service.domain.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -25,5 +23,21 @@ public class UserRestController {
     @PostMapping ("/auth/login")
     public ResponseEntity<UserLoginResponseDTO> loginUser (@RequestBody UserLoginRequestDTO userLoginRequestDTO) {
         return new ResponseEntity <> (userService.loginUser(userLoginRequestDTO), HttpStatus.OK);
+    }
+
+    @GetMapping ("/users")
+    public ResponseEntity<List<UserPublicDTO>> getAllUsers () {
+        return new ResponseEntity <> (userService.getAllUsers(), HttpStatus.OK);
+    }
+
+    @GetMapping ("/users/{id}")
+    public ResponseEntity<UserPublicDTO> getUserById (@PathVariable Integer id) {
+        return new ResponseEntity <> (userService.getUserById(id), HttpStatus.OK);
+    }
+
+    @PutMapping ("/users")
+    public ResponseEntity<?> updatePassword (@RequestBody PasswordUpdateDTO dto) {
+        userService.updatePassword(dto);
+        return ResponseEntity.ok(Map.of("message", "Password updated successfully."));
     }
 }
