@@ -9,6 +9,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -55,6 +56,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 User user = userRepository.findByUsername(username)
                         .orElseThrow(() -> new UsernameNotFoundException("User not found."));
                 authLogService.logAuthError(user, "Token expired", LocalDateTime.now());
+
+                throw new BadCredentialsException("Credentials are incorrect.");
             }
         }
 
