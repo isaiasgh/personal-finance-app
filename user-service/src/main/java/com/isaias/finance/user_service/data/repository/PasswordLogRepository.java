@@ -10,4 +10,6 @@ import java.util.List;
 @Repository
 public interface PasswordLogRepository extends JpaRepository <PasswordLog, Integer> {
     List<PasswordLog> findPasswordLogByUserAndIsCurrent(User user, Boolean isCurrent);
+
+    List<PasswordLog> findPasswordLogByUser (User user);
 }

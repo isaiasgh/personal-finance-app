@@ -1,5 +1,6 @@
 package com.isaias.finance.user_service.config;
 
+import com.isaias.finance.user_service.domain.exception.InvalidPasswordException;
 import com.isaias.finance.user_service.domain.exception.UserAlreadyExistsException;
 import com.isaias.finance.user_service.domain.exception.UserNotFoundException;
 import org.springframework.http.HttpStatus;
@@ -71,11 +72,17 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
+    @ExceptionHandler(InvalidPasswordException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidPasswordException(InvalidPasswordException ex) {
+        Map<String, String> error = new HashMap<>();
+        error.put("message", ex.getMessage());
+        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleGenericException(Exception ex) {
         Map<String, String> error = new HashMap<>();
         error.put("message", "An unexpected error occurred.");
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
 }

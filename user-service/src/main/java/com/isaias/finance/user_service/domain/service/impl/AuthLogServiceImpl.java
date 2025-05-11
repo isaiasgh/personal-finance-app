@@ -12,6 +12,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -50,7 +52,13 @@ public class AuthLogServiceImpl implements AuthLogService {
 
         if (!encoder.matches(dto.getCurrentPassword(), password.getHashedPassword())) throw new BadCredentialsException("Incorrect current password.");
 
-        if (encoder.matches(dto.getNewPassword(), password.getHashedPassword())) throw new InvalidPasswordException("The new password cannot be the same as the current password.");
+        boolean isReusedPassword = passwordLogRepository.findPasswordLogByUser(user).stream()
+                .filter(
+                        log -> log.getLoginError() == null &&
+                                log.getHashedPassword() != null
+                ).anyMatch(log -> encoder.matches(dto.getNewPassword(), log.getHashedPassword()));
+
+        if (isReusedPassword) throw new InvalidPasswordException("The new password cannot be the same as an older password.");
 
         password.setIsCurrent(false);
         repository.save(password);
