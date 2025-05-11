@@ -1,5 +1,6 @@
 package com.isaias.finance.user_service.domain.service.impl;
 
+import com.isaias.finance.user_service.config.security.JwtProvider;
 import com.isaias.finance.user_service.data.dto.*;
 import com.isaias.finance.user_service.data.entity.User;
 import com.isaias.finance.user_service.data.mapper.UserMapper;
@@ -22,6 +23,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
+import javax.swing.text.html.Option;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -44,6 +46,9 @@ public class UserServiceImplTest {
     @Mock
     private AuthenticationManager authenticationManager;
 
+    @Mock
+    private JwtProvider jwtProvider;
+
     @InjectMocks
     private UserServiceImpl subject;
 
@@ -53,6 +58,7 @@ public class UserServiceImplTest {
     private UserPublicDTO userPublicDTO;
     private PasswordUpdateDTO passwordUpdateDTO;
     private UserLoginRequestDTO userLoginRequestDTO;
+    private UserLoginResponseDTO userLoginResponseDTO;
 
     @BeforeEach
     void setUp() {
@@ -97,13 +103,16 @@ public class UserServiceImplTest {
         userLoginRequestDTO = new UserLoginRequestDTO();
         userLoginRequestDTO.setUsername(username);
         userLoginRequestDTO.setPassword(password);
+
+        userLoginResponseDTO = new UserLoginResponseDTO();
+        userLoginResponseDTO.setUser(userResponse);
      }
 
     @DisplayName("Should throw exception when user credentials already exist")
     @Test
     void shouldThrowExceptionWhenCredentialsExist () {
-        when (userRepository.existsUserByEmail("john@gmail.com")).thenReturn(true);
-        when (userRepository.existsUserByUsername("john.doe")).thenReturn(true);
+        when(userRepository.existsUserByEmail("john@gmail.com")).thenReturn(true);
+        when(userRepository.existsUserByUsername("john.doe")).thenReturn(true);
 
         UserAlreadyExistsException ex = assertThrows(UserAlreadyExistsException.class,
                 () -> subject.registerNewUser(newUser));
@@ -116,11 +125,11 @@ public class UserServiceImplTest {
     @DisplayName("Should return UserBasicDTO when method is successful")
     @Test
     void shouldReturnUserBasicDTOWhenMethodIsSuccessful () {
-        when (userRepository.existsUserByEmail("john@gmail.com")).thenReturn(false);
-        when (userRepository.existsUserByUsername("john.doe")).thenReturn(false);
+        when(userRepository.existsUserByEmail("john@gmail.com")).thenReturn(false);
+        when(userRepository.existsUserByUsername("john.doe")).thenReturn(false);
 
-        when (userMapper.userRegistrationRequestDTOToUser(newUser)).thenReturn(user);
-        when (userMapper.userToUserBasicDTO(user)).thenReturn(userResponse);
+        when(userMapper.userRegistrationRequestDTOToUser(newUser)).thenReturn(user);
+        when(userMapper.userToUserBasicDTO(user)).thenReturn(userResponse);
 
         assertEquals(userResponse, subject.registerNewUser(newUser));
 
@@ -131,9 +140,9 @@ public class UserServiceImplTest {
     @DisplayName("Should return a list of UserPublicDTOs when users are found")
     @Test
     void shouldReturnListOfUserPublicDTOsWhenUsersExist () {
-        when (userRepository.findAll()).thenReturn(List.of(user));
+        when(userRepository.findAll()).thenReturn(List.of(user));
 
-        when (userMapper.userToUserPublicDTO(user)).thenReturn(userPublicDTO);
+        when(userMapper.userToUserPublicDTO(user)).thenReturn(userPublicDTO);
 
         assertEquals(List.of(userPublicDTO), subject.getAllUsers());
 
@@ -151,8 +160,7 @@ public class UserServiceImplTest {
         when(authentication.getName()).thenReturn("john.doe");
         SecurityContextHolder.setContext(securityContext);
 
-        when (userRepository.findByUsername("john.doe")).thenReturn(Optional.of(user));
-
+        when(userRepository.findByUsername("john.doe")).thenReturn(Optional.of(user));
         subject.updatePassword(passwordUpdateDTO);
 
         verify(authLogService, times(1)).updatePassword(passwordUpdateDTO, user);
@@ -185,4 +193,27 @@ public class UserServiceImplTest {
                 .logAuthError(eq(user), eq("Incorrect password."), any(LocalDateTime.class));
     }
 
+    @DisplayName("Should return a UserLoginResponseDTO when login is successful")
+    @Test
+    void shouldReturnUserLoginResponseDTOWhenLoginIsSuccessful () {
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+        String token = "mocked.jwt.token";
+
+        when(authenticationManager.authenticate(any())).thenReturn(authentication);
+        when(jwtProvider.generateToken(authentication)).thenReturn(token);
+
+        when(userRepository.findByUsername("john.doe")).thenReturn(Optional.of(user));
+        when(userMapper.userToUserBasicDTO(user)).thenReturn(userResponse);
+
+        userLoginResponseDTO.setToken(token);
+        userLoginResponseDTO.setTokenType("Bearer ");
+        UserLoginResponseDTO response = subject.loginUser(userLoginRequestDTO);
+
+        assertEquals(token, response.getToken());
+        assertEquals(userResponse, response.getUser());
+        verify(authenticationManager, times(1)).authenticate(any());
+        verify(jwtProvider, times(1)).generateToken(authentication);
+        verify(userRepository, times(1)).findByUsername("john.doe");
+    }
 }
