@@ -88,11 +88,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserPublicDTO getUserById (Integer id) {
-        return userMapper.userToUserPublicDTO(
-                userRepository.findById(id)
-                .orElseThrow(() -> new UserNotFoundException("User with id " + id + " does not exist."))
-        );
+    public UserBasicDTO getUserInfo() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found."));
+
+        return userMapper.userToUserBasicDTO(user);
     }
 
     @Override

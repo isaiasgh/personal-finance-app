@@ -26,14 +26,14 @@ public class UserRestController {
         return new ResponseEntity <> (userService.loginUser(userLoginRequestDTO), HttpStatus.OK);
     }
 
-    @GetMapping ("/users")
+    @GetMapping ("/users/all")
     public ResponseEntity<List<UserPublicDTO>> getAllUsers () {
         return new ResponseEntity <> (userService.getAllUsers(), HttpStatus.OK);
     }
 
-    @GetMapping ("/users/{id}")
-    public ResponseEntity<UserPublicDTO> getUserById (@PathVariable @Valid Integer id) {
-        return new ResponseEntity <> (userService.getUserById(id), HttpStatus.OK);
+    @GetMapping ("/users")
+    public UserBasicDTO getUserInfo () {
+        return userService.getUserInfo();
     }
 
     @PutMapping ("/users")

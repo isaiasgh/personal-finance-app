@@ -11,7 +11,7 @@ public interface UserService {
 
     List <UserPublicDTO> getAllUsers ();
 
-    UserPublicDTO getUserById (Integer id);
+    UserBasicDTO getUserInfo ();
 
     void updatePassword (PasswordUpdateDTO dto);
 }
