@@ -1,6 +1,7 @@
 package com.isaias.finance.user_service.domain.service.impl;
 
 import com.isaias.finance.user_service.data.dto.UserBasicDTO;
+import com.isaias.finance.user_service.data.dto.UserPublicDTO;
 import com.isaias.finance.user_service.data.dto.UserRegistrationRequestDTO;
 import com.isaias.finance.user_service.data.entity.User;
 import com.isaias.finance.user_service.data.mapper.UserMapper;
@@ -16,6 +17,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -38,6 +41,7 @@ public class UserServiceImplTest {
     private UserRegistrationRequestDTO newUser;
     private UserBasicDTO userResponse;
     private User user;
+    private UserPublicDTO userPublicDTO;
 
     @BeforeEach
     void setUp() {
@@ -68,6 +72,12 @@ public class UserServiceImplTest {
         userResponse.setLastName(lastName);
         userResponse.setUsername(username);
         userResponse.setEmail(email);
+
+        userPublicDTO = new UserPublicDTO();
+        userPublicDTO.setId(id);
+        userPublicDTO.setName(name);
+        userPublicDTO.setLastName(lastName);
+        userPublicDTO.setUsername(username);
     }
 
     @DisplayName("Should throw exception when user credentials already exist")
@@ -97,5 +107,18 @@ public class UserServiceImplTest {
 
         verify(userRepository, times(1)).save(user);
         verify(authLogService, times(1)).logNewUserPassword(eq(user), eq(newUser.getPassword()), any());
+    }
+
+    @DisplayName("Should return a list of UserPublicDTOs when users are found")
+    @Test
+    void shouldReturnListOfUserPublicDTOsWhenUsersExist () {
+        when (userRepository.findAll()).thenReturn(List.of(user));
+
+        when (userMapper.userToUserPublicDTO(user)).thenReturn(userPublicDTO);
+
+        assertEquals(List.of(userPublicDTO), subject.getAllUsers());
+
+        verify(userRepository, times(1)).findAll();
+        verify(userMapper, times(1)).userToUserPublicDTO(user);
     }
 }
