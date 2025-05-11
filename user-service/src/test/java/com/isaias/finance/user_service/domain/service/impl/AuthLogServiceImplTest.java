@@ -6,6 +6,7 @@ import com.isaias.finance.user_service.data.repository.PasswordLogRepository;
 import com.isaias.finance.user_service.domain.service.AuthLogServiceImpl;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -57,9 +58,9 @@ public class AuthLogServiceImplTest {
         passwordLog.setAttemptTimestamp(timestamp);
     }
 
+    @DisplayName("Should save a PasswordLog with encoded password and correct timestamp when logging new user password")
     @Test
     void shouldLogNewPasswordWhenIsSuccessful () {
-        passwordLog.setHashedPassword("password is encoded");
         when(encoder.encode(rawPassword)).thenReturn("password is encoded");
 
         subject.logNewUserPassword(user, rawPassword, timestamp);
@@ -70,6 +71,23 @@ public class AuthLogServiceImplTest {
         PasswordLog savedLog = captor.getValue();
         assertEquals(user, savedLog.getUser());
         assertEquals("password is encoded", savedLog.getHashedPassword());
+        assertEquals(timestamp, savedLog.getAttemptTimestamp());
+    }
+
+    @DisplayName("Should save a password log with error description and timestamp when login fails")
+    @Test
+    void shouldSavePasswordLogWithErrorDetailsWhenLoginFails () {
+        String error = "Bad credentials.";
+
+        subject.logAuthError(user, error, timestamp);
+
+        ArgumentCaptor<PasswordLog> captor = ArgumentCaptor.forClass(PasswordLog.class);
+        verify(passwordLogRepository, times(1)).save(captor.capture());
+
+        PasswordLog savedLog = captor.getValue();
+        assertEquals(user, savedLog.getUser());
+        assertEquals("", savedLog.getHashedPassword());
+        assertEquals(error, savedLog.getLoginError());
         assertEquals(timestamp, savedLog.getAttemptTimestamp());
     }
 }
