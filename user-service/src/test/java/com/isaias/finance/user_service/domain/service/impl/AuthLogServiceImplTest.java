@@ -119,4 +119,14 @@ public class AuthLogServiceImplTest {
 
         assertThrows(BadCredentialsException.class, () -> subject.updatePassword(passwordUpdateDTO, user));
     }
+
+    @DisplayName("Should throw InvalidPasswordException when new password is same as current one")
+    @Test
+    void shouldThrowInvalidPasswordExceptionWhenNewPasswordIsSameAsCurrentPassword () {
+        when(passwordLogRepository.findPasswordLogByUserOrderByAttemptTimestampDesc(user)).thenReturn(Collections.singletonList(passwordLog));
+        when(encoder.matches(passwordUpdateDTO.getCurrentPassword(), passwordLog.getHashedPassword())).thenReturn(true);
+        when(encoder.matches(passwordUpdateDTO.getNewPassword(), passwordLog.getHashedPassword())).thenReturn(true);
+
+        assertThrows(InvalidPasswordException.class, () -> subject.updatePassword(passwordUpdateDTO, user));
+    }
 }
