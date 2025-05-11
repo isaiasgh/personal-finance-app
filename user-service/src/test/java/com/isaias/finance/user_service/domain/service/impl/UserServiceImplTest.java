@@ -1,9 +1,6 @@
 package com.isaias.finance.user_service.domain.service.impl;
 
-import com.isaias.finance.user_service.data.dto.PasswordUpdateDTO;
-import com.isaias.finance.user_service.data.dto.UserBasicDTO;
-import com.isaias.finance.user_service.data.dto.UserPublicDTO;
-import com.isaias.finance.user_service.data.dto.UserRegistrationRequestDTO;
+import com.isaias.finance.user_service.data.dto.*;
 import com.isaias.finance.user_service.data.entity.User;
 import com.isaias.finance.user_service.data.mapper.UserMapper;
 import com.isaias.finance.user_service.data.repository.UserRepository;
@@ -18,11 +15,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -41,6 +41,9 @@ public class UserServiceImplTest {
     @Mock
     private AuthLogService authLogService;
 
+    @Mock
+    private AuthenticationManager authenticationManager;
+
     @InjectMocks
     private UserServiceImpl subject;
 
@@ -49,6 +52,7 @@ public class UserServiceImplTest {
     private User user;
     private UserPublicDTO userPublicDTO;
     private PasswordUpdateDTO passwordUpdateDTO;
+    private UserLoginRequestDTO userLoginRequestDTO;
 
     @BeforeEach
     void setUp() {
@@ -89,7 +93,11 @@ public class UserServiceImplTest {
         passwordUpdateDTO = new PasswordUpdateDTO();
         passwordUpdateDTO.setCurrentPassword(password);
         passwordUpdateDTO.setNewPassword("1234");
-    }
+
+        userLoginRequestDTO = new UserLoginRequestDTO();
+        userLoginRequestDTO.setUsername(username);
+        userLoginRequestDTO.setPassword(password);
+     }
 
     @DisplayName("Should throw exception when user credentials already exist")
     @Test
@@ -164,4 +172,17 @@ public class UserServiceImplTest {
 
         assertThrows (UsernameNotFoundException.class, () -> subject.updatePassword(passwordUpdateDTO));
     }
+
+    @DisplayName("Should log auth error and throw BadCredentialsException when password is incorrect")
+    @Test
+    void shouldLogErrorAndThrowExceptionWhenCredentialsAreInvalid() {
+        when(authenticationManager.authenticate(any())).thenThrow(new BadCredentialsException("Bad credentials"));
+        when(userRepository.findByUsername("john.doe")).thenReturn(Optional.of(user));
+
+        assertThrows(BadCredentialsException.class, () -> subject.loginUser(userLoginRequestDTO));
+
+        verify(authLogService, times(1))
+                .logAuthError(eq(user), eq("Incorrect password."), any(LocalDateTime.class));
+    }
+
 }
