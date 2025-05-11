@@ -21,6 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.util.List;
 import java.util.Optional;
@@ -147,5 +148,20 @@ public class UserServiceImplTest {
         subject.updatePassword(passwordUpdateDTO);
 
         verify(authLogService, times(1)).updatePassword(passwordUpdateDTO, user);
+    }
+
+    @DisplayName("Should throw UsernameNotFoundException when user is not found by username")
+    @Test
+    void shouldThrowUsernameNotFoundExceptionWhenUserIsNotFoundByUsername () {
+        Authentication authentication = mock(Authentication.class);
+        SecurityContext securityContext = mock(SecurityContext.class);
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("john.doe");
+        SecurityContextHolder.setContext(securityContext);
+
+        when (userRepository.findByUsername("john.doe")).thenReturn(Optional.empty());
+
+        assertThrows (UsernameNotFoundException.class, () -> subject.updatePassword(passwordUpdateDTO));
     }
 }
