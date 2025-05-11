@@ -15,9 +15,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -60,6 +62,7 @@ public class AuthLogServiceImplTest {
 
         passwordLog = new PasswordLog();
         passwordLog.setUser(user);
+        passwordLog.setHashedPassword(rawPassword);
         passwordLog.setAttemptTimestamp(timestamp);
 
         passwordUpdateDTO = new PasswordUpdateDTO();
@@ -106,5 +109,14 @@ public class AuthLogServiceImplTest {
         when(passwordLogRepository.findPasswordLogByUserOrderByAttemptTimestampDesc(user)).thenReturn(List.of());
 
         assertThrows(InvalidPasswordException.class, () -> subject.updatePassword(passwordUpdateDTO, user));
+    }
+
+    @DisplayName("Should throw BadCredentialsException when current password does not match the stored password")
+    @Test
+    void shouldThrowBadCredentialsExceptionWhenCurrentPasswordIsIncorrec () {
+        when(passwordLogRepository.findPasswordLogByUserOrderByAttemptTimestampDesc(user)).thenReturn(Collections.singletonList(passwordLog));
+        when(encoder.matches(passwordUpdateDTO.getCurrentPassword(), passwordLog.getHashedPassword())).thenReturn(false);
+
+        assertThrows(BadCredentialsException.class, () -> subject.updatePassword(passwordUpdateDTO, user));
     }
 }
