@@ -129,4 +129,16 @@ public class AuthLogServiceImplTest {
 
         assertThrows(InvalidPasswordException.class, () -> subject.updatePassword(passwordUpdateDTO, user));
     }
+
+    @DisplayName("Should update password and log it when current password is valid and new one is different")
+    @Test
+    void shouldUpdatePasswordSuccessfullyWhenCurrentPasswordIsValidAndNewPasswordIsDifferent () {
+        when(passwordLogRepository.findPasswordLogByUserOrderByAttemptTimestampDesc(user)).thenReturn(Collections.singletonList(passwordLog));
+        when(encoder.matches(passwordUpdateDTO.getCurrentPassword(), passwordLog.getHashedPassword())).thenReturn(true);
+        when(encoder.matches(passwordUpdateDTO.getNewPassword(), passwordLog.getHashedPassword())).thenReturn(false);
+
+        subject.updatePassword(passwordUpdateDTO, user);
+
+        verify(passwordLogRepository, times(1)).save(any(PasswordLog.class));
+    }
 }
