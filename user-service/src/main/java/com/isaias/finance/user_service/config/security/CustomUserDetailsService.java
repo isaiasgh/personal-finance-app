@@ -1,7 +1,9 @@
 package com.isaias.finance.user_service.config.security;
 
+import com.isaias.finance.user_service.data.dto.UserBasicDTO;
 import com.isaias.finance.user_service.data.entity.PasswordLog;
 import com.isaias.finance.user_service.data.entity.User;
+import com.isaias.finance.user_service.data.mapper.UserMapper;
 import com.isaias.finance.user_service.data.repository.PasswordLogRepository;
 import com.isaias.finance.user_service.data.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +20,7 @@ import java.util.Collections;
 public class CustomUserDetailsService implements UserDetailsService {
     private final UserRepository userRepository;
     private final PasswordLogRepository passwordLogRepository;
+    private final UserMapper userMapper;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -33,5 +36,10 @@ public class CustomUserDetailsService implements UserDetailsService {
                 passwordLog.getHashedPassword(),
                 Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
         );
+    }
+
+    public UserBasicDTO loadUserBasicDTOByUsername (String username) {
+        return userMapper.userToUserBasicDTO(userRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found.")));
     }
 }
