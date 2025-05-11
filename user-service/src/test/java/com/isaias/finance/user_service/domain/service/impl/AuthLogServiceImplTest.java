@@ -5,7 +5,6 @@ import com.isaias.finance.user_service.data.entity.PasswordLog;
 import com.isaias.finance.user_service.data.entity.User;
 import com.isaias.finance.user_service.data.repository.PasswordLogRepository;
 import com.isaias.finance.user_service.domain.exception.InvalidPasswordException;
-import com.isaias.finance.user_service.domain.service.AuthLogServiceImpl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

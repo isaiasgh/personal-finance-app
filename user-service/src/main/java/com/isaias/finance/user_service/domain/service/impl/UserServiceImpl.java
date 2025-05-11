@@ -1,4 +1,4 @@
-package com.isaias.finance.user_service.domain.service;
+package com.isaias.finance.user_service.domain.service.impl;
 
 import com.isaias.finance.user_service.config.security.JwtProvider;
 import com.isaias.finance.user_service.data.dto.*;
@@ -7,6 +7,8 @@ import com.isaias.finance.user_service.data.mapper.UserMapper;
 import com.isaias.finance.user_service.data.repository.UserRepository;
 import com.isaias.finance.user_service.domain.exception.UserAlreadyExistsException;
 import com.isaias.finance.user_service.domain.exception.UserNotFoundException;
+import com.isaias.finance.user_service.domain.service.AuthLogService;
+import com.isaias.finance.user_service.domain.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;

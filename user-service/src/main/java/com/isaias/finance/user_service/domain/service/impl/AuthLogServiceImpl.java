@@ -1,10 +1,11 @@
-package com.isaias.finance.user_service.domain.service;
+package com.isaias.finance.user_service.domain.service.impl;
 
 import com.isaias.finance.user_service.data.dto.PasswordUpdateDTO;
 import com.isaias.finance.user_service.data.entity.PasswordLog;
 import com.isaias.finance.user_service.data.entity.User;
 import com.isaias.finance.user_service.data.repository.PasswordLogRepository;
 import com.isaias.finance.user_service.domain.exception.InvalidPasswordException;
+import com.isaias.finance.user_service.domain.service.AuthLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;

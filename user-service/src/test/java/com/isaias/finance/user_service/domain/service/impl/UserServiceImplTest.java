@@ -7,7 +7,6 @@ import com.isaias.finance.user_service.data.mapper.UserMapper;
 import com.isaias.finance.user_service.data.repository.UserRepository;
 import com.isaias.finance.user_service.domain.exception.UserAlreadyExistsException;
 import com.isaias.finance.user_service.domain.service.AuthLogService;
-import com.isaias.finance.user_service.domain.service.UserServiceImpl;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
