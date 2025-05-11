@@ -112,7 +112,7 @@ public class AuthLogServiceImplTest {
 
     @DisplayName("Should throw BadCredentialsException when current password does not match the stored password")
     @Test
-    void shouldThrowBadCredentialsExceptionWhenCurrentPasswordIsIncorrec () {
+    void shouldThrowBadCredentialsExceptionWhenCurrentPasswordIsIncorrect () {
         when(passwordLogRepository.findPasswordLogByUserAndIsCurrent(user, true)).thenReturn(Collections.singletonList(passwordLog));
         when(encoder.matches(passwordUpdateDTO.getCurrentPassword(), passwordLog.getHashedPassword())).thenReturn(false);
 
@@ -124,6 +124,7 @@ public class AuthLogServiceImplTest {
     void shouldThrowInvalidPasswordExceptionWhenNewPasswordIsSameAsCurrentPassword () {
         when(passwordLogRepository.findPasswordLogByUserAndIsCurrent(user, true)).thenReturn(Collections.singletonList(passwordLog));
         when(encoder.matches(passwordUpdateDTO.getCurrentPassword(), passwordLog.getHashedPassword())).thenReturn(true);
+        when(passwordLogRepository.findPasswordLogByUser(user)).thenReturn(Collections.singletonList(passwordLog));
         when(encoder.matches(passwordUpdateDTO.getNewPassword(), passwordLog.getHashedPassword())).thenReturn(true);
 
         assertThrows(InvalidPasswordException.class, () -> subject.updatePassword(passwordUpdateDTO, user));
@@ -136,6 +137,7 @@ public class AuthLogServiceImplTest {
 
         when(passwordLogRepository.findPasswordLogByUserAndIsCurrent(user, true)).thenReturn(Collections.singletonList(passwordLog));
         when(encoder.matches(passwordUpdateDTO.getCurrentPassword(), passwordLog.getHashedPassword())).thenReturn(true);
+        when(passwordLogRepository.findPasswordLogByUser(user)).thenReturn(Collections.singletonList(passwordLog));
         when(encoder.matches(passwordUpdateDTO.getNewPassword(), passwordLog.getHashedPassword())).thenReturn(false);
 
         subject.updatePassword(passwordUpdateDTO, user);
