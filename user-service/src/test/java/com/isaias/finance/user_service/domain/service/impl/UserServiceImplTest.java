@@ -1,8 +1,12 @@
 package com.isaias.finance.user_service.domain.service.impl;
 
+import com.isaias.finance.user_service.data.dto.UserBasicDTO;
 import com.isaias.finance.user_service.data.dto.UserRegistrationRequestDTO;
+import com.isaias.finance.user_service.data.entity.User;
+import com.isaias.finance.user_service.data.mapper.UserMapper;
 import com.isaias.finance.user_service.data.repository.UserRepository;
 import com.isaias.finance.user_service.domain.exception.UserAlreadyExistsException;
+import com.isaias.finance.user_service.domain.service.AuthLogService;
 import com.isaias.finance.user_service.domain.service.UserServiceImpl;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -22,19 +26,48 @@ public class UserServiceImplTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private UserMapper userMapper;
+
+    @Mock
+    private AuthLogService authLogService;
+
     @InjectMocks
     private UserServiceImpl subject;
 
     private UserRegistrationRequestDTO newUser;
+    private UserBasicDTO userResponse;
+    private User user;
 
     @BeforeEach
     void setUp() {
+        String name = "John";
+        String lastName = "Doe";
+        String email = "john@gmail.com";
+        String username = "john.doe";
+        String password = "1234";
+        Integer id = 1;
+
         newUser = new UserRegistrationRequestDTO();
-        newUser.setName("John");
-        newUser.setLastName("Doe");
-        newUser.setEmail("john@gmail.com");
-        newUser.setUsername("john.doe");
-        newUser.setPassword("1234");
+        newUser.setName(name);
+        newUser.setLastName(lastName);
+        newUser.setUsername(username);
+        newUser.setEmail(email);
+        newUser.setPassword(password);
+
+        user = new User ();
+        user.setId(id);
+        user.setName(name);
+        user.setLastName(lastName);
+        user.setUsername(username);
+        user.setEmail(email);
+
+        userResponse = new UserBasicDTO();
+        userResponse.setId(id);
+        userResponse.setName(name);
+        userResponse.setLastName(lastName);
+        userResponse.setUsername(username);
+        userResponse.setEmail(email);
     }
 
     @DisplayName("Should throw exception when user credentials already exist")
@@ -49,5 +82,20 @@ public class UserServiceImplTest {
         assertEquals("User credentials are already in use", ex.getMessage());
 
         verify(userRepository, never()).save(any());
+    }
+
+    @DisplayName("Should return UserBasicDTO when method is successful")
+    @Test
+    void shouldReturnUserBasicDTOWhenMethodIsSuccessful () {
+        when (userRepository.existsUserByEmail("john@gmail.com")).thenReturn(false);
+        when (userRepository.existsUserByUsername("john.doe")).thenReturn(false);
+
+        when (userMapper.userRegistrationRequestDTOToUser(newUser)).thenReturn(user);
+        when (userMapper.userToUserBasicDTO(user)).thenReturn(userResponse);
+
+        assertEquals(userResponse, subject.registerNewUser(newUser));
+
+        verify(userRepository, times(1)).save(user);
+        verify(authLogService, times(1)).logNewUserPassword(eq(user), eq(newUser.getPassword()), any());
     }
 }
