@@ -22,7 +22,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username).orElseThrow(() -> new UsernameNotFoundException("User with username: " + username + " not found"));
-        PasswordLog passwordLog = passwordLogRepository.findPasswordLogByUserOrderByAttemptTimestampDesc(user)
+        PasswordLog passwordLog = passwordLogRepository.findPasswordLogByUserAndIsCurrent(user, true)
                 .stream()
                 .filter(log -> log.getLoginError() == null && log.getHashedPassword() != null)
                 .findFirst()

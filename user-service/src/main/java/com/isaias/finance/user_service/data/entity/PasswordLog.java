@@ -19,6 +19,8 @@ public class PasswordLog {
 
     private String loginError;
 
+    private Boolean isCurrent;
+
     @ManyToOne
     @JoinColumn (name = "user_id", nullable = false)
     private User user;

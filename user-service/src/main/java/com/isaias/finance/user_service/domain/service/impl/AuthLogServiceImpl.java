@@ -26,6 +26,7 @@ public class AuthLogServiceImpl implements AuthLogService {
         log.setUser(user);
         log.setHashedPassword(encoder.encode(rawPassword));
         log.setAttemptTimestamp(timestamp);
+        log.setIsCurrent(true);
         repository.save(log);
     }
 
@@ -41,7 +42,7 @@ public class AuthLogServiceImpl implements AuthLogService {
 
     @Override
     public void updatePassword(PasswordUpdateDTO dto, User user) {
-        PasswordLog password = passwordLogRepository.findPasswordLogByUserOrderByAttemptTimestampDesc(user)
+        PasswordLog password = passwordLogRepository.findPasswordLogByUserAndIsCurrent(user, true)
                 .stream()
                 .filter(log -> log.getLoginError() == null && log.getHashedPassword() != null)
                 .findFirst()
@@ -51,6 +52,8 @@ public class AuthLogServiceImpl implements AuthLogService {
 
         if (encoder.matches(dto.getNewPassword(), password.getHashedPassword())) throw new InvalidPasswordException("The new password cannot be the same as the current password.");
 
+        password.setIsCurrent(false);
+        repository.save(password);
         logNewUserPassword(user, dto.getNewPassword(), LocalDateTime.now());
     }
 }

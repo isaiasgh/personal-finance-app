@@ -9,5 +9,5 @@ import java.util.List;
 
 @Repository
 public interface PasswordLogRepository extends JpaRepository <PasswordLog, Integer> {
-    List <PasswordLog> findPasswordLogByUserOrderByAttemptTimestampDesc (User user);
+    List<PasswordLog> findPasswordLogByUserAndIsCurrent(User user, Boolean isCurrent);
 }
