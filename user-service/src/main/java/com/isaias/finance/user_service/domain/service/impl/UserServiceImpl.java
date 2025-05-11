@@ -6,7 +6,6 @@ import com.isaias.finance.user_service.data.entity.User;
 import com.isaias.finance.user_service.data.mapper.UserMapper;
 import com.isaias.finance.user_service.data.repository.UserRepository;
 import com.isaias.finance.user_service.domain.exception.UserAlreadyExistsException;
-import com.isaias.finance.user_service.domain.exception.UserNotFoundException;
 import com.isaias.finance.user_service.domain.service.AuthLogService;
 import com.isaias.finance.user_service.domain.service.UserService;
 import lombok.RequiredArgsConstructor;

@@ -1,5 +1,6 @@
 package com.isaias.finance.user_service.config;
 
+import com.isaias.finance.user_service.data.dto.ErrorResponseDTO;
 import com.isaias.finance.user_service.domain.exception.InvalidPasswordException;
 import com.isaias.finance.user_service.domain.exception.UserAlreadyExistsException;
 import com.isaias.finance.user_service.domain.exception.UserNotFoundException;
@@ -27,62 +28,48 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler (BadCredentialsException.class)
-    public ResponseEntity<Map<String, String>> handleBadCredentialsException (BadCredentialsException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("message", ex.getMessage());
-
-        return new ResponseEntity <> (error, HttpStatus.UNAUTHORIZED);
+    public ResponseEntity<ErrorResponseDTO> handleBadCredentialsException (BadCredentialsException ex) {
+        return new ResponseEntity <> (buildResponse(ex.getMessage()), HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler (UserAlreadyExistsException.class)
-    public ResponseEntity<Map<String, String>> handleUserAlreadyExistsException (UserAlreadyExistsException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("message", ex.getMessage());
-
-        return new ResponseEntity <> (error, HttpStatus.CONFLICT);
+    public ResponseEntity<ErrorResponseDTO> handleUserAlreadyExistsException (UserAlreadyExistsException ex) {
+        return new ResponseEntity <> (buildResponse(ex.getMessage()), HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler (UsernameNotFoundException.class)
-    public ResponseEntity<Map<String, String>> handleUsernameNotFoundException (UsernameNotFoundException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("message", ex.getMessage());
-
-        return new ResponseEntity <> (error, HttpStatus.NOT_FOUND);
+    public ResponseEntity<ErrorResponseDTO> handleUsernameNotFoundException (UsernameNotFoundException ex) {
+        return new ResponseEntity <> (buildResponse(ex.getMessage()), HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler (UserNotFoundException.class)
-    public ResponseEntity<Map<String, String>> handleUserNotFoundException (UserNotFoundException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("message", ex.getMessage());
-
-        return new ResponseEntity <> (error, HttpStatus.NOT_FOUND);
+    public ResponseEntity<ErrorResponseDTO> handleUserNotFoundException (UserNotFoundException ex) {
+        return new ResponseEntity <> (buildResponse(ex.getMessage()), HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Map<String, String>> handleAccessDeniedException(AccessDeniedException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("message", "You do not have permission to perform this action.");
-        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    public ResponseEntity<ErrorResponseDTO> handleAccessDeniedException(AccessDeniedException ex) {
+        return new ResponseEntity<>(buildResponse("You do not have permission to perform this action."), HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, String>> handleIllegalArgumentException(IllegalArgumentException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("message", ex.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    public ResponseEntity<ErrorResponseDTO> handleIllegalArgumentException(IllegalArgumentException ex) {
+        return new ResponseEntity<>(buildResponse(ex.getMessage()), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(InvalidPasswordException.class)
-    public ResponseEntity<Map<String, String>> handleInvalidPasswordException(InvalidPasswordException ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("message", ex.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    public ResponseEntity<ErrorResponseDTO> handleInvalidPasswordException(InvalidPasswordException ex) {
+        return new ResponseEntity<>(buildResponse(ex.getMessage()), HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, String>> handleGenericException(Exception ex) {
-        Map<String, String> error = new HashMap<>();
-        error.put("message", "An unexpected error occurred.");
-        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    public ResponseEntity<ErrorResponseDTO> handleGenericException(Exception ex) {
+        return new ResponseEntity<>(buildResponse("An unexpected error occurred."), HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    private ErrorResponseDTO buildResponse (String message) {
+        ErrorResponseDTO error = new ErrorResponseDTO();
+        error.setMessage(message);
+        return error;
     }
 }
