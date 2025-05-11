@@ -1,8 +1,10 @@
 package com.isaias.finance.user_service.domain.service.impl;
 
+import com.isaias.finance.user_service.data.dto.PasswordUpdateDTO;
 import com.isaias.finance.user_service.data.entity.PasswordLog;
 import com.isaias.finance.user_service.data.entity.User;
 import com.isaias.finance.user_service.data.repository.PasswordLogRepository;
+import com.isaias.finance.user_service.domain.exception.InvalidPasswordException;
 import com.isaias.finance.user_service.domain.service.AuthLogServiceImpl;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -16,8 +18,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,6 +37,7 @@ public class AuthLogServiceImplTest {
 
     private User user;
     private PasswordLog passwordLog;
+    private PasswordUpdateDTO passwordUpdateDTO;
     private String rawPassword;
     private LocalDateTime timestamp;
 
@@ -56,6 +61,10 @@ public class AuthLogServiceImplTest {
         passwordLog = new PasswordLog();
         passwordLog.setUser(user);
         passwordLog.setAttemptTimestamp(timestamp);
+
+        passwordUpdateDTO = new PasswordUpdateDTO();
+        passwordUpdateDTO.setNewPassword("1234");
+        passwordUpdateDTO.setCurrentPassword("123");
     }
 
     @DisplayName("Should save a PasswordLog with encoded password and correct timestamp when logging new user password")
@@ -89,5 +98,13 @@ public class AuthLogServiceImplTest {
         assertEquals("", savedLog.getHashedPassword());
         assertEquals(error, savedLog.getLoginError());
         assertEquals(timestamp, savedLog.getAttemptTimestamp());
+    }
+
+    @DisplayName("Should throw InvalidPasswordException when no valid password log is found for user")
+    @Test
+    void shouldThrowInvalidPasswordExceptionWhenNoValidPasswordLogExists () {
+        when(passwordLogRepository.findPasswordLogByUserOrderByAttemptTimestampDesc(user)).thenReturn(List.of());
+
+        assertThrows(InvalidPasswordException.class, () -> subject.updatePassword(passwordUpdateDTO, user));
     }
 }
