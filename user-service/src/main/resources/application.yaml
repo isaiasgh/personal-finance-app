@@ -33,3 +33,10 @@ expiration:
 
 security:
   constant: ${SECURITY_CONSTANT}
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui
+  api-docs:
+    path: /v3/api-docs
+    enabled: true
