@@ -1,1 +1,13 @@
-spring.application.name=eureka-server
+spring:
+  application:
+    name: eureka-server
+
+server:
+  port: 8761
+  servlet:
+    context-path: /eureka-server
+
+eureka:
+  client:
+    register-with-eureka: false
+    fetch-registry: false
