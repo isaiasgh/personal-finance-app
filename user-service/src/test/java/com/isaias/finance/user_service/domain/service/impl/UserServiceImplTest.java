@@ -103,7 +103,6 @@ public class UserServiceImplTest {
         userLoginRequestDTO.setPassword(password);
 
         userLoginResponseDTO = new UserLoginResponseDTO();
-        userLoginResponseDTO.setUser(userResponse);
      }
 
     @DisplayName("Should throw exception when user credentials already exist")
@@ -202,14 +201,12 @@ public class UserServiceImplTest {
         when(jwtProvider.generateToken(authentication)).thenReturn(token);
 
         when(userRepository.findByUsername("john.doe")).thenReturn(Optional.of(user));
-        when(userMapper.userToUserBasicDTO(user)).thenReturn(userResponse);
 
         userLoginResponseDTO.setToken(token);
         userLoginResponseDTO.setTokenType("Bearer ");
         UserLoginResponseDTO response = subject.loginUser(userLoginRequestDTO);
 
         assertEquals(token, response.getToken());
-        assertEquals(userResponse, response.getUser());
         verify(authenticationManager, times(1)).authenticate(any());
         verify(jwtProvider, times(1)).generateToken(authentication);
         verify(userRepository, times(1)).findByUsername("john.doe");
