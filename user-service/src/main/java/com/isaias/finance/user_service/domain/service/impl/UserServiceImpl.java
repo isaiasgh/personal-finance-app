@@ -63,11 +63,9 @@ public class UserServiceImpl implements UserService {
             User user = userRepository.findByUsername(userLoginRequestDTO.getUsername())
                     .orElseThrow(() -> new UsernameNotFoundException("User not found."));
 
-            UserBasicDTO userBasicDTO = userMapper.userToUserBasicDTO(user);
 
             UserLoginResponseDTO userLoginResponseDTO = new UserLoginResponseDTO();
             userLoginResponseDTO.setToken(token);
-            userLoginResponseDTO.setUser(userBasicDTO);
 
             return userLoginResponseDTO;
 
