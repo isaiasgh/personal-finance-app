@@ -1,0 +1,67 @@
+package com.isaias.finance.user_service.domain.service.impl;
+
+import com.isaias.finance.user_service.data.dto.PasswordUpdateDTO;
+import com.isaias.finance.user_service.data.entity.PasswordLog;
+import com.isaias.finance.user_service.data.entity.User;
+import com.isaias.finance.user_service.data.repository.PasswordLogRepository;
+import com.isaias.finance.user_service.domain.exception.InvalidPasswordException;
+import com.isaias.finance.user_service.domain.service.AuthLogService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class AuthLogServiceImpl implements AuthLogService {
+    private final PasswordLogRepository repository;
+    private final PasswordEncoder encoder;
+    private final PasswordLogRepository passwordLogRepository;
+
+    @Override
+    public void logNewUserPassword(User user, String rawPassword, LocalDateTime timestamp) {
+        PasswordLog log = new PasswordLog();
+        log.setUser(user);
+        log.setHashedPassword(encoder.encode(rawPassword));
+        log.setAttemptTimestamp(timestamp);
+        log.setIsCurrent(true);
+        repository.save(log);
+    }
+
+    @Override
+    public void logAuthError(User user, String errorDescription, LocalDateTime timestamp) {
+        PasswordLog log = new PasswordLog();
+        log.setUser(user);
+        log.setHashedPassword("");
+        log.setAttemptTimestamp(timestamp);
+        log.setLoginError(errorDescription);
+        repository.save(log);
+    }
+
+    @Override
+    public void updatePassword(PasswordUpdateDTO dto, User user) {
+        PasswordLog password = passwordLogRepository.findPasswordLogByUserAndIsCurrent(user, true)
+                .stream()
+                .filter(log -> log.getLoginError() == null && log.getHashedPassword() != null)
+                .findFirst()
+                .orElseThrow(() -> new InvalidPasswordException("No valid password record found."));
+
+        if (!encoder.matches(dto.getCurrentPassword(), password.getHashedPassword())) throw new BadCredentialsException("Incorrect current password.");
+
+        boolean isReusedPassword = passwordLogRepository.findPasswordLogByUser(user).stream()
+                .filter(
+                        log -> log.getLoginError() == null &&
+                                log.getHashedPassword() != null
+                ).anyMatch(log -> encoder.matches(dto.getNewPassword(), log.getHashedPassword()));
+
+        if (isReusedPassword) throw new InvalidPasswordException("The new password cannot be the same as an older password.");
+
+        password.setIsCurrent(false);
+        repository.save(password);
+        logNewUserPassword(user, dto.getNewPassword(), LocalDateTime.now());
+    }
+}
