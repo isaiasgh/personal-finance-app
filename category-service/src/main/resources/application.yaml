@@ -27,6 +27,9 @@ server:
   servlet:
     context-path: /category-service
 
+security:
+  constant: ${SECURITY_CONSTANT}
+
 eureka:
   client:
     service-url:
