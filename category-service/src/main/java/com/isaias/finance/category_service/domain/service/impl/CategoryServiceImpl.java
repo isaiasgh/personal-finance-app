@@ -1,17 +1,19 @@
 package com.isaias.finance.category_service.domain.service.impl;
 
 import com.isaias.finance.category_service.config.security.JwtProvider;
-import com.isaias.finance.category_service.data.dto.CategoryCreationRequestDTO;
-import com.isaias.finance.category_service.data.dto.CategoryCreationResponseDTO;
+import com.isaias.finance.category_service.data.dto.*;
 import com.isaias.finance.category_service.data.entity.Category;
 import com.isaias.finance.category_service.data.mapper.CategoryMapper;
 import com.isaias.finance.category_service.data.repository.CategoryRepository;
 import com.isaias.finance.category_service.domain.exception.CategoryAlreadyExistsException;
+import com.isaias.finance.category_service.domain.exception.CategoryNotFoundException;
 import com.isaias.finance.category_service.domain.service.CategoryService;
 import com.isaias.finance.category_service.domain.client.UserAuthClient;
 import com.isaias.finance.category_service.domain.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -20,6 +22,8 @@ public class CategoryServiceImpl implements CategoryService {
     private final CategoryMapper mapper;
     private final JwtProvider jwtProvider;
     private final UserAuthClient userAuthClient;
+
+    private List <String> baseCategoriesNames = List.of ("Health", "Entertainment", "Transport", "Food");
 
     @Override
     public CategoryCreationResponseDTO createNewCategory(CategoryCreationRequestDTO category, String jwtAuth) {
@@ -32,13 +36,40 @@ public class CategoryServiceImpl implements CategoryService {
                         username
                 );
 
+        boolean existsBaseCategory = repository
+                .existsByNameAndUsernameIsNull(category.getName());
+
         if (exists) throw new CategoryAlreadyExistsException("Category with name: " + category.getName() + " for user: " + username + " already exists.");
+        if (existsBaseCategory) throw new CategoryAlreadyExistsException("Category with name: " + category.getName() + " is a base category.");
 
         Category newCategory = new Category ();
         newCategory.setName(category.getName());
         newCategory.setUsername(username);
 
         return mapper.categoryToCategoryCreationResponseDTO (repository.save(newCategory));
+    }
+
+    @Override
+    public UserCategoriesResponseDTO getAllUserCategories(String jwtAuth) {
+        String username = getValidateUsername(jwtAuth);
+        verifyUsernameWithUserService(username);
+
+        return buildUserCategoriesResponse (username);
+    }
+
+    private UserCategoriesResponseDTO buildUserCategoriesResponse(String username) {
+        List<CategoryResponseDTO> baseCategories = baseCategoriesNames.stream()
+                .map(categoryName -> repository.findByName(categoryName)
+                        .map(mapper::categoryToCategoryResponseDTO)
+                        .orElseThrow(() -> new CategoryNotFoundException("Category " + categoryName + " was not found")))
+                .toList();
+
+        List<UserCategoryResponseDTO> userCategories = repository
+                .findCategoriesByUsername(username).stream()
+                .map(mapper::categoryToUserCategoryResponseDTO)
+                .toList();
+
+        return new UserCategoriesResponseDTO(baseCategories, userCategories);
     }
 
     private String getValidateUsername (String jwtToken) {
