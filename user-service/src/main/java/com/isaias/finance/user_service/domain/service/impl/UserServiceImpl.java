@@ -102,6 +102,11 @@ public class UserServiceImpl implements UserService {
         authLogService.updatePassword(dto, user);
     }
 
+    @Override
+    public boolean isUsernameValid(String username) {
+        return userRepository.existsUserByUsername(username);
+    }
+
     private boolean areUserCredentialsAvailable (UserRegistrationRequestDTO userRequest) {
         boolean usernameIsAvailable = !userRepository.existsUserByUsername(userRequest.getUsername());
         boolean emailIsAvailable = !userRepository.existsUserByEmail(userRequest.getEmail());

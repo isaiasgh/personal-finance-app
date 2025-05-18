@@ -14,4 +14,6 @@ public interface UserService {
     UserBasicDTO getUserInfo ();
 
     void updatePassword (PasswordUpdateDTO dto);
+
+    boolean isUsernameValid(String username);
 }
