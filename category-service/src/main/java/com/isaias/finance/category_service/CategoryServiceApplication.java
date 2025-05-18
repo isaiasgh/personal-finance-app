@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @SpringBootApplication
-@EnableFeignClients(basePackages = "com.isaias.finance.category_service.domain.service")
+@EnableFeignClients(basePackages = "com.isaias.finance.category_service")
 public class CategoryServiceApplication {
 
 	public static void main(String[] args) {
