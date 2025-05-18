@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface CategoryRepository extends JpaRepository <Category, Long> {
     boolean existsByNameAndUsernameIsNull(String name);
+
+    boolean existsByNameAndUsername(String name, String username);
 }
