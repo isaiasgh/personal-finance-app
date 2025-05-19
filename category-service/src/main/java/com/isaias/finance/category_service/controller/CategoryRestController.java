@@ -12,6 +12,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/categories")
@@ -34,5 +36,13 @@ public class CategoryRestController {
     @GetMapping("/{id}")
     public UserCategoryResponseDTO getCategoryById (@RequestHeader("Authorization") String jwtAuth, @PathVariable Long id) {
         return categoryService.getCategoryById (id, jwtAuth);
+    }
+
+    @GetMapping("/search")
+    public List<UserCategoryResponseDTO> searchCategoriesByName (
+            @RequestParam String name,
+            @RequestHeader("Authorization") String jwtAuth
+    ) {
+        return categoryService.searchCategoriesByName(name, jwtAuth);
     }
 }
