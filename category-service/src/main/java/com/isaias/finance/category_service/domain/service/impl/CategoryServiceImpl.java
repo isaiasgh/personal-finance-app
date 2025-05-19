@@ -73,6 +73,16 @@ public class CategoryServiceImpl implements CategoryService {
         throw new CategoryNotBelongsToUserException("Category with id: " + id + " does not belong to user: " + username);
     }
 
+    @Override
+    public List<UserCategoryResponseDTO> searchCategoriesByName(String name, String jwtAuth) {
+        String username = getValidateUsername(jwtAuth);
+        verifyUsernameWithUserService(username);
+
+        return repository.findCategoriesByNameContainingAndUsername(name, username).stream()
+                .map(mapper::categoryToUserCategoryResponseDTO)
+                .toList();
+    }
+
     private UserCategoriesResponseDTO buildUserCategoriesResponse(String username) {
         List<CategoryResponseDTO> baseCategories = baseCategoriesNames.stream()
                 .map(categoryName -> repository.findByName(categoryName)
