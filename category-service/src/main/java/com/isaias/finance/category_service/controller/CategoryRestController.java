@@ -3,6 +3,7 @@ package com.isaias.finance.category_service.controller;
 import com.isaias.finance.category_service.data.dto.CategoryCreationRequestDTO;
 import com.isaias.finance.category_service.data.dto.CategoryCreationResponseDTO;
 import com.isaias.finance.category_service.data.dto.UserCategoriesResponseDTO;
+import com.isaias.finance.category_service.data.dto.UserCategoryResponseDTO;
 import com.isaias.finance.category_service.domain.service.CategoryService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -28,5 +29,10 @@ public class CategoryRestController {
     @GetMapping()
     public UserCategoriesResponseDTO getAllUserCategories (@RequestHeader("Authorization") String jwt) {
         return categoryService.getAllUserCategories(jwt);
+    }
+
+    @GetMapping("/{id}")
+    public UserCategoryResponseDTO getCategoryById (@RequestHeader("Authorization") String jwtAuth, @PathVariable Long id) {
+        return categoryService.getCategoryById (id, jwtAuth);
     }
 }
