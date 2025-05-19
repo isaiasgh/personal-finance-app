@@ -6,6 +6,7 @@ import com.isaias.finance.category_service.data.entity.Category;
 import com.isaias.finance.category_service.data.mapper.CategoryMapper;
 import com.isaias.finance.category_service.data.repository.CategoryRepository;
 import com.isaias.finance.category_service.domain.exception.CategoryAlreadyExistsException;
+import com.isaias.finance.category_service.domain.exception.CategoryNotBelongsToUserException;
 import com.isaias.finance.category_service.domain.exception.CategoryNotFoundException;
 import com.isaias.finance.category_service.domain.service.CategoryService;
 import com.isaias.finance.category_service.domain.client.UserAuthClient;
@@ -55,6 +56,21 @@ public class CategoryServiceImpl implements CategoryService {
         verifyUsernameWithUserService(username);
 
         return buildUserCategoriesResponse (username);
+    }
+
+    @Override
+    public UserCategoryResponseDTO getCategoryById(Long id, String jwtAuth) {
+        String username = getValidateUsername(jwtAuth);
+        verifyUsernameWithUserService(username);
+
+        Category category = repository.findById(id)
+                .orElseThrow(() -> new CategoryNotFoundException("Category with id: " + id + " was not found."));
+
+        if (category.getUsername().equals(username)) {
+            return mapper.categoryToUserCategoryResponseDTO(category);
+        }
+
+        throw new CategoryNotBelongsToUserException("Category with id: " + id + " does not belong to user: " + username);
     }
 
     private UserCategoriesResponseDTO buildUserCategoriesResponse(String username) {
