@@ -52,4 +52,13 @@ public class CategoryRestController {
     ) {
         return categoryService.updateCategory(id, categoryUpdateDTO, jwtAuth);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteCategory (
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String jwtAuth
+    ) {
+        categoryService.deleteCategory(id, jwtAuth);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
 }

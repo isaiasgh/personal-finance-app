@@ -14,4 +14,6 @@ public interface CategoryService {
     List<UserCategoryResponseDTO> searchCategoriesByName(String name, String jwtAuth);
 
     UserCategoryResponseDTO updateCategory(Long id, CategoryUpdateDTO categoryUpdateDTO, String jwtAuth);
+
+    void deleteCategory(Long id, String jwtAuth);
 }
