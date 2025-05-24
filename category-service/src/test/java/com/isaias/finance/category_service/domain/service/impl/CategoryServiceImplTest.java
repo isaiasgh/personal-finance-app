@@ -394,4 +394,103 @@ public class CategoryServiceImplTest {
         verify(repository, never()).findCategoriesByNameContainingAndUsername(any(), any());
         verify(mapper, never()).categoryToUserCategoryResponseDTO(any());
     }
+
+    @Test
+    @DisplayName("updateCategory: should update category successfully")
+    void updateCategory_shouldUpdateCategorySuccessfully() {
+        CategoryUpdateDTO updateDTO = new CategoryUpdateDTO();
+        updateDTO.setName("UpdatedBooks");
+
+        category.setUsername(username);
+
+        Category updatedCategory = new Category();
+        updatedCategory.setId(categoryId);
+        updatedCategory.setName("UpdatedBooks");
+        updatedCategory.setUsername(username);
+
+        UserCategoryResponseDTO updatedResponse = new UserCategoryResponseDTO();
+        updatedResponse.setId(categoryId);
+        updatedResponse.setName("UpdatedBooks");
+        updatedResponse.setUsername(username);
+
+        when(jwtProvider.validateToken(validJwt)).thenReturn(true);
+        when(jwtProvider.getUsername(validJwt)).thenReturn(username);
+        when(userAuthClient.isUsernameValid(username)).thenReturn(true);
+        when(repository.findById(categoryId)).thenReturn(Optional.of(category));
+        when(repository.save(any(Category.class))).thenReturn(updatedCategory);
+        when(mapper.categoryToUserCategoryResponseDTO(updatedCategory)).thenReturn(updatedResponse);
+
+        UserCategoryResponseDTO result = subject.updateCategory(categoryId, updateDTO, validJwt);
+
+        assertEquals("UpdatedBooks", result.getName());
+        assertEquals(username, result.getUsername());
+        verify(repository).save(any(Category.class));
+    }
+
+    @Test
+    @DisplayName("updateCategory: should throw UnauthorizedException if JWT token is invalid")
+    void updateCategory_shouldThrowUnauthorizedExceptionIfJwtIsInvalid() {
+        CategoryUpdateDTO updateDTO = new CategoryUpdateDTO();
+        updateDTO.setName("UpdatedBooks");
+
+        when(jwtProvider.validateToken(invalidJwt)).thenReturn(false);
+
+        assertThrows(UnauthorizedException.class,
+                () -> subject.updateCategory(categoryId, updateDTO, invalidJwt));
+
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("updateCategory: should throw UnauthorizedException if user is not valid")
+    void updateCategory_shouldThrowUnauthorizedExceptionIfUserIsNotValid() {
+        CategoryUpdateDTO updateDTO = new CategoryUpdateDTO();
+        updateDTO.setName("UpdatedBooks");
+
+        when(jwtProvider.validateToken(validJwt)).thenReturn(true);
+        when(jwtProvider.getUsername(validJwt)).thenReturn(username);
+        when(userAuthClient.isUsernameValid(username)).thenReturn(false);
+
+        assertThrows(UnauthorizedException.class,
+                () -> subject.updateCategory(categoryId, updateDTO, validJwt));
+
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("updateCategory: should throw CategoryNotFoundException if category does not exist")
+    void updateCategory_shouldThrowCategoryNotFoundExceptionIfCategoryNotFound() {
+        CategoryUpdateDTO updateDTO = new CategoryUpdateDTO();
+        updateDTO.setName("UpdatedBooks");
+
+        when(jwtProvider.validateToken(validJwt)).thenReturn(true);
+        when(jwtProvider.getUsername(validJwt)).thenReturn(username);
+        when(userAuthClient.isUsernameValid(username)).thenReturn(true);
+        when(repository.findById(categoryId)).thenReturn(Optional.empty());
+
+        assertThrows(CategoryNotFoundException.class,
+                () -> subject.updateCategory(categoryId, updateDTO, validJwt));
+
+        verify(repository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("updateCategory: should throw CategoryNotBelongsToUserException if category belongs to another user")
+    void updateCategory_shouldThrowCategoryNotBelongsToUserExceptionIfNotOwner() {
+        CategoryUpdateDTO updateDTO = new CategoryUpdateDTO();
+        updateDTO.setName("UpdatedBooks");
+
+        category.setUsername("another.user");
+
+        when(jwtProvider.validateToken(validJwt)).thenReturn(true);
+        when(jwtProvider.getUsername(validJwt)).thenReturn(username);
+        when(userAuthClient.isUsernameValid(username)).thenReturn(true);
+        when(repository.findById(categoryId)).thenReturn(Optional.of(category));
+
+        assertThrows(CategoryNotBelongsToUserException.class,
+                () -> subject.updateCategory(categoryId, updateDTO, validJwt));
+
+        verify(repository, never()).save(any());
+    }
+
 }
