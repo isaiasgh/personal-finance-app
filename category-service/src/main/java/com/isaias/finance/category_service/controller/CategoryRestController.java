@@ -1,12 +1,10 @@
 package com.isaias.finance.category_service.controller;
 
-import com.isaias.finance.category_service.data.dto.CategoryCreationRequestDTO;
-import com.isaias.finance.category_service.data.dto.CategoryCreationResponseDTO;
-import com.isaias.finance.category_service.data.dto.UserCategoriesResponseDTO;
-import com.isaias.finance.category_service.data.dto.UserCategoryResponseDTO;
+import com.isaias.finance.category_service.data.dto.*;
 import com.isaias.finance.category_service.domain.service.CategoryService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.ws.rs.Path;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -44,5 +42,14 @@ public class CategoryRestController {
             @RequestHeader("Authorization") String jwtAuth
     ) {
         return categoryService.searchCategoriesByName(name, jwtAuth);
+    }
+
+    @PutMapping("/{id}")
+    public UserCategoryResponseDTO updateCategory (
+            @RequestBody @Valid CategoryUpdateDTO categoryUpdateDTO,
+            @PathVariable Long id,
+            @RequestHeader("Authorization") String jwtAuth
+    ) {
+        return categoryService.updateCategory(id, categoryUpdateDTO, jwtAuth);
     }
 }
