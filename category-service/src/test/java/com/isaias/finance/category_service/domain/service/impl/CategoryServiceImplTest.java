@@ -493,4 +493,72 @@ public class CategoryServiceImplTest {
         verify(repository, never()).save(any());
     }
 
+    @Test
+    @DisplayName("deleteCategory: should delete category successfully")
+    void deleteCategory_shouldDeleteCategorySuccessfully() {
+        category.setUsername(username);
+
+        when(jwtProvider.validateToken(validJwt)).thenReturn(true);
+        when(jwtProvider.getUsername(validJwt)).thenReturn(username);
+        when(userAuthClient.isUsernameValid(username)).thenReturn(true);
+        when(repository.findById(categoryId)).thenReturn(Optional.of(category));
+
+        subject.deleteCategory(categoryId, validJwt);
+
+        verify(repository).delete(category);
+    }
+
+    @Test
+    @DisplayName("deleteCategory: should throw UnauthorizedException if JWT token is invalid")
+    void deleteCategory_shouldThrowUnauthorizedExceptionIfJwtInvalid() {
+        when(jwtProvider.validateToken(invalidJwt)).thenReturn(false);
+
+        assertThrows(UnauthorizedException.class,
+                () -> subject.deleteCategory(categoryId, invalidJwt));
+
+        verify(repository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("deleteCategory: should throw UnauthorizedException if user is not valid")
+    void deleteCategory_shouldThrowUnauthorizedExceptionIfUserInvalid() {
+        when(jwtProvider.validateToken(validJwt)).thenReturn(true);
+        when(jwtProvider.getUsername(validJwt)).thenReturn(username);
+        when(userAuthClient.isUsernameValid(username)).thenReturn(false);
+
+        assertThrows(UnauthorizedException.class,
+                () -> subject.deleteCategory(categoryId, validJwt));
+
+        verify(repository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("deleteCategory: should throw CategoryNotFoundException if category does not exist")
+    void deleteCategory_shouldThrowCategoryNotFoundExceptionIfNotFound() {
+        when(jwtProvider.validateToken(validJwt)).thenReturn(true);
+        when(jwtProvider.getUsername(validJwt)).thenReturn(username);
+        when(userAuthClient.isUsernameValid(username)).thenReturn(true);
+        when(repository.findById(categoryId)).thenReturn(Optional.empty());
+
+        assertThrows(CategoryNotFoundException.class,
+                () -> subject.deleteCategory(categoryId, validJwt));
+
+        verify(repository, never()).delete(any());
+    }
+
+    @Test
+    @DisplayName("deleteCategory: should throw CategoryNotBelongsToUserException if category belongs to another user")
+    void deleteCategory_shouldThrowCategoryNotBelongsToUserExceptionIfNotOwner() {
+        category.setUsername("someone.else");
+
+        when(jwtProvider.validateToken(validJwt)).thenReturn(true);
+        when(jwtProvider.getUsername(validJwt)).thenReturn(username);
+        when(userAuthClient.isUsernameValid(username)).thenReturn(true);
+        when(repository.findById(categoryId)).thenReturn(Optional.of(category));
+
+        assertThrows(CategoryNotBelongsToUserException.class,
+                () -> subject.deleteCategory(categoryId, validJwt));
+
+        verify(repository, never()).delete(any());
+    }
 }
