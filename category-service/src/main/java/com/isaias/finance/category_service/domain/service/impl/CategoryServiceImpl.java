@@ -40,8 +40,8 @@ public class CategoryServiceImpl implements CategoryService {
         boolean existsBaseCategory = repository
                 .existsByNameAndUsernameIsNull(category.getName());
 
-        if (exists) throw new CategoryAlreadyExistsException("Category with name: " + category.getName() + " for user: " + username + " already exists.");
-        if (existsBaseCategory) throw new CategoryAlreadyExistsException("Category with name: " + category.getName() + " is a base category.");
+        if (exists) throw new CategoryAlreadyExistsException(category.getName(), username);
+        if (existsBaseCategory) throw new CategoryAlreadyExistsException(category.getName());
 
         Category newCategory = new Category ();
         newCategory.setName(category.getName());
@@ -64,13 +64,13 @@ public class CategoryServiceImpl implements CategoryService {
         verifyUsernameWithUserService(username);
 
         Category category = repository.findById(id)
-                .orElseThrow(() -> new CategoryNotFoundException("Category with id: " + id + " was not found."));
+                .orElseThrow(() -> new CategoryNotFoundException(id));
 
         if (category.getUsername().equals(username)) {
             return mapper.categoryToUserCategoryResponseDTO(category);
         }
 
-        throw new CategoryNotBelongsToUserException("Category with id: " + id + " does not belong to user: " + username);
+        throw new CategoryNotBelongsToUserException(id, username);
     }
 
     @Override
@@ -89,7 +89,7 @@ public class CategoryServiceImpl implements CategoryService {
         verifyUsernameWithUserService(username);
 
         Category category = repository.findById(id)
-                .orElseThrow(() -> new CategoryNotFoundException("Category with id: " + id + " was not found"));
+                .orElseThrow(() -> new CategoryNotFoundException(id));
 
         checkIfCategoryBelongsToUser(id, username, category);
 
@@ -103,7 +103,7 @@ public class CategoryServiceImpl implements CategoryService {
         verifyUsernameWithUserService(username);
 
         Category category = repository.findById(id)
-                .orElseThrow(() -> new CategoryNotFoundException("Category with id: " + id + " was not found"));
+                .orElseThrow(() -> new CategoryNotFoundException(id));
 
         checkIfCategoryBelongsToUser(id, username, category);
 
@@ -112,7 +112,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     private void checkIfCategoryBelongsToUser (Long id, String username, Category category) {
         if (!category.getUsername().equals(username)) {
-            throw new CategoryNotBelongsToUserException("Category with id: " + id + " does not belong to user: " + username);
+            throw new CategoryNotBelongsToUserException(id, username);
         }
     }
 
@@ -120,7 +120,7 @@ public class CategoryServiceImpl implements CategoryService {
         List<CategoryResponseDTO> baseCategories = baseCategoriesNames.stream()
                 .map(categoryName -> repository.findByName(categoryName)
                         .map(mapper::categoryToCategoryResponseDTO)
-                        .orElseThrow(() -> new CategoryNotFoundException("Category " + categoryName + " was not found")))
+                        .orElseThrow(() -> new CategoryNotFoundException(categoryName)))
                 .toList();
 
         List<UserCategoryResponseDTO> userCategories = repository
@@ -133,7 +133,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     private String getValidateUsername (String jwtToken) {
         if (!jwtProvider.validateToken(jwtToken)) {
-            throw new UnauthorizedException("Token not valid");
+            throw new UnauthorizedException();
         }
 
         return jwtProvider.getUsername(jwtToken);
@@ -143,7 +143,7 @@ public class CategoryServiceImpl implements CategoryService {
         boolean exists = userAuthClient.isUsernameValid(username);
 
         if (!exists) {
-            throw new UnauthorizedException("User not valid");
+            throw new UnauthorizedException();
         }
     }
 }

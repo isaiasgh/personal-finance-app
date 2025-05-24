@@ -35,7 +35,7 @@ public class UserServiceImpl implements UserService {
         boolean credentialsAreAvailable = areUserCredentialsAvailable (userRequest);
 
         if (!credentialsAreAvailable) {
-            throw new UserAlreadyExistsException("User credentials are already in use");
+            throw new UserAlreadyExistsException();
         }
 
         LocalDateTime creationTime = LocalDateTime.now();
