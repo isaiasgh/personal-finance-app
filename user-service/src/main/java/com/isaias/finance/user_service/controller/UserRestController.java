@@ -41,4 +41,9 @@ public class UserRestController {
         userService.updatePassword(dto);
         return ResponseEntity.ok(Map.of("message", "Password updated successfully."));
     }
+
+    @GetMapping("/users/{username}")
+    public boolean isUsernameValid (@PathVariable String username) {
+        return userService.isUsernameValid(username);
+    }
 }

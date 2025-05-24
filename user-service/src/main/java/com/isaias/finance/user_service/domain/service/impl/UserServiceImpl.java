@@ -35,7 +35,7 @@ public class UserServiceImpl implements UserService {
         boolean credentialsAreAvailable = areUserCredentialsAvailable (userRequest);
 
         if (!credentialsAreAvailable) {
-            throw new UserAlreadyExistsException("User credentials are already in use");
+            throw new UserAlreadyExistsException();
         }
 
         LocalDateTime creationTime = LocalDateTime.now();
@@ -100,6 +100,11 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new UsernameNotFoundException("User not found."));
 
         authLogService.updatePassword(dto, user);
+    }
+
+    @Override
+    public boolean isUsernameValid(String username) {
+        return userRepository.existsUserByUsername(username);
     }
 
     private boolean areUserCredentialsAvailable (UserRegistrationRequestDTO userRequest) {
