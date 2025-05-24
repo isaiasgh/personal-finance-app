@@ -4,7 +4,6 @@ import com.isaias.finance.category_service.data.dto.*;
 import com.isaias.finance.category_service.domain.service.CategoryService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import jakarta.ws.rs.Path;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
