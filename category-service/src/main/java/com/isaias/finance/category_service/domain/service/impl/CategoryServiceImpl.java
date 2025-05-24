@@ -83,6 +83,24 @@ public class CategoryServiceImpl implements CategoryService {
                 .toList();
     }
 
+    @Override
+    public UserCategoryResponseDTO updateCategory(Long id, CategoryUpdateDTO categoryUpdateDTO, String jwtAuth) {
+        String username = getValidateUsername(jwtAuth);
+        verifyUsernameWithUserService(username);
+
+        Category category = repository.findById(id)
+                .orElseThrow(() -> new CategoryNotFoundException("Category with id: " + id + " was not found"));
+
+        boolean categoryBelongsToUser = category.getUsername().equals(username);
+
+        if (!categoryBelongsToUser) {
+            throw new CategoryNotBelongsToUserException("Category with id: " + id + " does not belong to user: " + username);
+        }
+
+        category.setName(categoryUpdateDTO.getName());
+        return mapper.categoryToUserCategoryResponseDTO(repository.save(category));
+    }
+
     private UserCategoriesResponseDTO buildUserCategoriesResponse(String username) {
         List<CategoryResponseDTO> baseCategories = baseCategoriesNames.stream()
                 .map(categoryName -> repository.findByName(categoryName)
