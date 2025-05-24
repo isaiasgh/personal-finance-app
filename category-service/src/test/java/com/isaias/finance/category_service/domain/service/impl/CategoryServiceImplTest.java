@@ -7,6 +7,8 @@ import com.isaias.finance.category_service.data.mapper.CategoryMapper;
 import com.isaias.finance.category_service.data.repository.CategoryRepository;
 import com.isaias.finance.category_service.domain.client.UserAuthClient;
 import com.isaias.finance.category_service.domain.exception.CategoryAlreadyExistsException;
+import com.isaias.finance.category_service.domain.exception.CategoryNotBelongsToUserException;
+import com.isaias.finance.category_service.domain.exception.CategoryNotFoundException;
 import com.isaias.finance.category_service.domain.exception.UnauthorizedException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -61,11 +63,15 @@ public class CategoryServiceImplTest {
     private Category userCategory;
     private UserCategoryResponseDTO userCategoryDTO;
 
+    private Long categoryId;
+
     @BeforeEach
     void setUp() {
         validJwt = "valid.jwt.token";
         invalidJwt = "invalid.jwt.token";
         username = "john.doe";
+
+        categoryId = 1L;
 
         creationRequest = new CategoryCreationRequestDTO();
         creationRequest.setName("Books");
@@ -108,7 +114,7 @@ public class CategoryServiceImplTest {
         userCategory.setUsername(username);
 
         userCategoryDTO = new UserCategoryResponseDTO();
-        userCategoryDTO.setName("MyCategory");
+        userCategoryDTO.setName("Books");
         userCategoryDTO.setUsername(username);
     }
 
@@ -178,8 +184,6 @@ public class CategoryServiceImplTest {
                 () -> subject.createNewCategory(creationRequest, validJwt));
     }
 
-    // Tests para getAllUserCategories
-
     @Test
     @DisplayName("Should return user categories response DTO when user is valid")
     void shouldReturnUserCategoriesResponseDTOWhenUserIsValid() {
@@ -246,5 +250,62 @@ public class CategoryServiceImplTest {
         verify(userAuthClient).isUsernameValid(username);
         verify(repository, never()).findByName(any());
         verify(repository, never()).findCategoriesByUsername(any());
+    }
+
+    @Test
+    @DisplayName("Should return UserCategoryResponseDTO if category exists and belongs to user")
+    void shouldReturnUserCategoryResponseDTOIfCategoryExistsAndBelongsToUser() {
+        when(jwtProvider.validateToken(validJwt)).thenReturn(true);
+        when(jwtProvider.getUsername(validJwt)).thenReturn(username);
+        when(userAuthClient.isUsernameValid(username)).thenReturn(true);
+
+        when(repository.findById(categoryId)).thenReturn(Optional.of(category));
+        when(mapper.categoryToUserCategoryResponseDTO(category)).thenReturn(userCategoryDTO);
+
+        UserCategoryResponseDTO result = subject.getCategoryById(categoryId, validJwt);
+
+        assertNotNull(result);
+        assertEquals("Books", result.getName());
+        assertEquals(username, result.getUsername());
+
+        verify(repository).findById(categoryId);
+        verify(mapper).categoryToUserCategoryResponseDTO(category);
+    }
+
+    @Test
+    @DisplayName("Should throw CategoryNotFoundException if category does not exist")
+    void shouldThrowCategoryNotFoundExceptionIfCategoryDoesNotExist() {
+        when(jwtProvider.validateToken(validJwt)).thenReturn(true);
+        when(jwtProvider.getUsername(validJwt)).thenReturn(username);
+        when(userAuthClient.isUsernameValid(username)).thenReturn(true);
+
+        when(repository.findById(categoryId)).thenReturn(Optional.empty());
+
+        assertThrows(CategoryNotFoundException.class,
+                () -> subject.getCategoryById(categoryId, validJwt));
+
+        verify(repository).findById(categoryId);
+        verify(mapper, never()).categoryToUserCategoryResponseDTO(any());
+    }
+
+    @Test
+    @DisplayName("Should throw CategoryNotBelongsToUserException if category does not belong to user")
+    void shouldThrowCategoryNotBelongsToUserExceptionIfCategoryNotBelongsToUser() {
+        when(jwtProvider.validateToken(validJwt)).thenReturn(true);
+        when(jwtProvider.getUsername(validJwt)).thenReturn(username);
+        when(userAuthClient.isUsernameValid(username)).thenReturn(true);
+
+        Category otherUserCategory = new Category();
+        otherUserCategory.setId(categoryId);
+        otherUserCategory.setName("Books");
+        otherUserCategory.setUsername("other.user");
+
+        when(repository.findById(categoryId)).thenReturn(Optional.of(otherUserCategory));
+
+        assertThrows(CategoryNotBelongsToUserException.class,
+                () -> subject.getCategoryById(categoryId, validJwt));
+
+        verify(repository).findById(categoryId);
+        verify(mapper, never()).categoryToUserCategoryResponseDTO(any());
     }
 }
