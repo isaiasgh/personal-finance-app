@@ -18,6 +18,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -55,6 +56,8 @@ public class CategoryServiceImplTest {
     private Category baseCategoryTransport;
     private Category baseCategoryFood;
 
+    private Category category2;
+
     private CategoryResponseDTO baseCategoryDTOHealth;
     private CategoryResponseDTO baseCategoryDTOEntertainment;
     private CategoryResponseDTO baseCategoryDTOTransport;
@@ -62,8 +65,10 @@ public class CategoryServiceImplTest {
 
     private Category userCategory;
     private UserCategoryResponseDTO userCategoryDTO;
+    private UserCategoryResponseDTO userCategoryDTO2;
 
     private Long categoryId;
+    private String searchName;
 
     @BeforeEach
     void setUp() {
@@ -72,6 +77,18 @@ public class CategoryServiceImplTest {
         username = "john.doe";
 
         categoryId = 1L;
+
+        searchName = "Book";
+
+        category2 = new Category();
+        category2.setId(2L);
+        category2.setName("Bookstore");
+        category2.setUsername(username);
+
+        userCategoryDTO2 = new UserCategoryResponseDTO();
+        userCategoryDTO2.setId(2L);
+        userCategoryDTO2.setName("Bookstore");
+        userCategoryDTO2.setUsername(username);
 
         creationRequest = new CategoryCreationRequestDTO();
         creationRequest.setName("Books");
@@ -306,6 +323,75 @@ public class CategoryServiceImplTest {
                 () -> subject.getCategoryById(categoryId, validJwt));
 
         verify(repository).findById(categoryId);
+        verify(mapper, never()).categoryToUserCategoryResponseDTO(any());
+    }
+
+    @Test
+    @DisplayName("Should return list of UserCategoryResponseDTO matching name and username")
+    void shouldReturnListOfUserCategoryResponseDTOMatchingNameAndUsername() {
+        when(jwtProvider.validateToken(validJwt)).thenReturn(true);
+        when(jwtProvider.getUsername(validJwt)).thenReturn(username);
+        when(userAuthClient.isUsernameValid(username)).thenReturn(true);
+
+        List<Category> categories = List.of(category, category2);
+        when(repository.findCategoriesByNameContainingAndUsername(searchName, username)).thenReturn(categories);
+
+        when(mapper.categoryToUserCategoryResponseDTO(category)).thenReturn(userCategoryDTO);
+        when(mapper.categoryToUserCategoryResponseDTO(category2)).thenReturn(userCategoryDTO2);
+
+        List<UserCategoryResponseDTO> results = subject.searchCategoriesByName(searchName, validJwt);
+
+        assertNotNull(results);
+        assertEquals(2, results.size());
+        assertEquals("Books", results.get(0).getName());
+        assertEquals("Bookstore", results.get(1).getName());
+
+        verify(repository).findCategoriesByNameContainingAndUsername(searchName, username);
+        verify(mapper).categoryToUserCategoryResponseDTO(category);
+        verify(mapper).categoryToUserCategoryResponseDTO(category2);
+    }
+
+    @Test
+    @DisplayName("Should return empty list if no categories found")
+    void shouldReturnEmptyListIfNoCategoriesFound() {
+        when(jwtProvider.validateToken(validJwt)).thenReturn(true);
+        when(jwtProvider.getUsername(validJwt)).thenReturn(username);
+        when(userAuthClient.isUsernameValid(username)).thenReturn(true);
+
+        when(repository.findCategoriesByNameContainingAndUsername(searchName, username)).thenReturn(Collections.emptyList());
+
+        List<UserCategoryResponseDTO> results = subject.searchCategoriesByName(searchName, validJwt);
+
+        assertNotNull(results);
+        assertTrue(results.isEmpty());
+
+        verify(repository).findCategoriesByNameContainingAndUsername(searchName, username);
+        verify(mapper, never()).categoryToUserCategoryResponseDTO(any());
+    }
+
+    @Test
+    @DisplayName("searchCategoriesByName: should throw UnauthorizedException if JWT token is invalid")
+    void searchCategoriesByName_shouldThrowUnauthorizedExceptionIfJwtIsInvalid() {
+        when(jwtProvider.validateToken(invalidJwt)).thenReturn(false);
+
+        assertThrows(UnauthorizedException.class,
+                () -> subject.searchCategoriesByName(searchName, invalidJwt));
+
+        verify(repository, never()).findCategoriesByNameContainingAndUsername(any(), any());
+        verify(mapper, never()).categoryToUserCategoryResponseDTO(any());
+    }
+
+    @Test
+    @DisplayName("searchCategoriesByName: should throw UnauthorizedException if user is not valid")
+    void searchCategoriesByName_shouldThrowUnauthorizedExceptionIfUserIsNotValid() {
+        when(jwtProvider.validateToken(validJwt)).thenReturn(true);
+        when(jwtProvider.getUsername(validJwt)).thenReturn(username);
+        when(userAuthClient.isUsernameValid(username)).thenReturn(false);
+
+        assertThrows(UnauthorizedException.class,
+                () -> subject.searchCategoriesByName(searchName, validJwt));
+
+        verify(repository, never()).findCategoriesByNameContainingAndUsername(any(), any());
         verify(mapper, never()).categoryToUserCategoryResponseDTO(any());
     }
 }
