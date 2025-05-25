@@ -1,0 +1,148 @@
+package com.isaias.finance.user_service.domain.service.impl;
+
+import com.isaias.finance.user_service.data.dto.PasswordUpdateDTO;
+import com.isaias.finance.user_service.data.entity.PasswordLog;
+import com.isaias.finance.user_service.data.entity.User;
+import com.isaias.finance.user_service.data.repository.PasswordLogRepository;
+import com.isaias.finance.user_service.domain.exception.InvalidPasswordException;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+public class AuthLogServiceImplTest {
+    @Mock
+    private PasswordEncoder encoder;
+
+    @Mock
+    private PasswordLogRepository passwordLogRepository;
+
+    @InjectMocks
+    private AuthLogServiceImpl subject;
+
+    private User user;
+    private PasswordLog passwordLog;
+    private PasswordUpdateDTO passwordUpdateDTO;
+    private String rawPassword;
+    private LocalDateTime timestamp;
+
+    @BeforeEach
+    void setUp () {
+        String name = "John";
+        String lastName = "Doe";
+        String email = "john@gmail.com";
+        String username = "john.doe";
+        rawPassword = "123";
+        Integer id = 1;
+        timestamp = LocalDateTime.now();
+
+        user = new User();
+        user.setId(id);
+        user.setName(name);
+        user.setLastName(lastName);
+        user.setUsername(username);
+        user.setEmail(email);
+
+        passwordLog = new PasswordLog();
+        passwordLog.setUser(user);
+        passwordLog.setHashedPassword(rawPassword);
+        passwordLog.setAttemptTimestamp(timestamp);
+
+        passwordUpdateDTO = new PasswordUpdateDTO();
+        passwordUpdateDTO.setNewPassword("1234");
+        passwordUpdateDTO.setCurrentPassword("123");
+    }
+
+    @DisplayName("Should save a PasswordLog with encoded password and correct timestamp when logging new user password")
+    @Test
+    void shouldLogNewPasswordWhenIsSuccessful () {
+        when(encoder.encode(rawPassword)).thenReturn("password is encoded");
+
+        subject.logNewUserPassword(user, rawPassword, timestamp);
+
+        ArgumentCaptor<PasswordLog> captor = ArgumentCaptor.forClass(PasswordLog.class);
+        verify(passwordLogRepository, times(1)).save(captor.capture());
+
+        PasswordLog savedLog = captor.getValue();
+        assertEquals(user, savedLog.getUser());
+        assertEquals("password is encoded", savedLog.getHashedPassword());
+        assertEquals(timestamp, savedLog.getAttemptTimestamp());
+    }
+
+    @DisplayName("Should save a password log with error description and timestamp when login fails")
+    @Test
+    void shouldSavePasswordLogWithErrorDetailsWhenLoginFails () {
+        String error = "Bad credentials.";
+
+        subject.logAuthError(user, error, timestamp);
+
+        ArgumentCaptor<PasswordLog> captor = ArgumentCaptor.forClass(PasswordLog.class);
+        verify(passwordLogRepository, times(1)).save(captor.capture());
+
+        PasswordLog savedLog = captor.getValue();
+        assertEquals(user, savedLog.getUser());
+        assertEquals("", savedLog.getHashedPassword());
+        assertEquals(error, savedLog.getLoginError());
+        assertEquals(timestamp, savedLog.getAttemptTimestamp());
+    }
+
+    @DisplayName("Should throw InvalidPasswordException when no valid password log is found for user")
+    @Test
+    void shouldThrowInvalidPasswordExceptionWhenNoValidPasswordLogExists () {
+        when(passwordLogRepository.findPasswordLogByUserAndIsCurrent(user, true)).thenReturn(List.of());
+
+        assertThrows(InvalidPasswordException.class, () -> subject.updatePassword(passwordUpdateDTO, user));
+    }
+
+    @DisplayName("Should throw BadCredentialsException when current password does not match the stored password")
+    @Test
+    void shouldThrowBadCredentialsExceptionWhenCurrentPasswordIsIncorrect () {
+        when(passwordLogRepository.findPasswordLogByUserAndIsCurrent(user, true)).thenReturn(Collections.singletonList(passwordLog));
+        when(encoder.matches(passwordUpdateDTO.getCurrentPassword(), passwordLog.getHashedPassword())).thenReturn(false);
+
+        assertThrows(BadCredentialsException.class, () -> subject.updatePassword(passwordUpdateDTO, user));
+    }
+
+    @DisplayName("Should throw InvalidPasswordException when new password is same as current one")
+    @Test
+    void shouldThrowInvalidPasswordExceptionWhenNewPasswordIsSameAsCurrentPassword () {
+        when(passwordLogRepository.findPasswordLogByUserAndIsCurrent(user, true)).thenReturn(Collections.singletonList(passwordLog));
+        when(encoder.matches(passwordUpdateDTO.getCurrentPassword(), passwordLog.getHashedPassword())).thenReturn(true);
+        when(passwordLogRepository.findPasswordLogByUser(user)).thenReturn(Collections.singletonList(passwordLog));
+        when(encoder.matches(passwordUpdateDTO.getNewPassword(), passwordLog.getHashedPassword())).thenReturn(true);
+
+        assertThrows(InvalidPasswordException.class, () -> subject.updatePassword(passwordUpdateDTO, user));
+    }
+
+    @DisplayName("Should update password and log it when current password is valid and new one is different")
+    @Test
+    void shouldUpdatePasswordSuccessfullyWhenCurrentPasswordIsValidAndNewPasswordIsDifferent () {
+        passwordLog.setIsCurrent(true);
+
+        when(passwordLogRepository.findPasswordLogByUserAndIsCurrent(user, true)).thenReturn(Collections.singletonList(passwordLog));
+        when(encoder.matches(passwordUpdateDTO.getCurrentPassword(), passwordLog.getHashedPassword())).thenReturn(true);
+        when(passwordLogRepository.findPasswordLogByUser(user)).thenReturn(Collections.singletonList(passwordLog));
+        when(encoder.matches(passwordUpdateDTO.getNewPassword(), passwordLog.getHashedPassword())).thenReturn(false);
+
+        subject.updatePassword(passwordUpdateDTO, user);
+        assertEquals(false, passwordLog.getIsCurrent());
+
+        verify(passwordLogRepository, times(2)).save(any(PasswordLog.class));
+    }
+}
